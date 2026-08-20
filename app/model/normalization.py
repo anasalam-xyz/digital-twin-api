@@ -25,6 +25,7 @@ CHANNEL_NAMES = ["Rainfall", "Tmax", "Tmin"]
 @dataclass
 class NormStats:
     """Per-channel normalization statistics."""
+
     mean: List[float]
     std: List[float]
     use_log1p: List[bool]

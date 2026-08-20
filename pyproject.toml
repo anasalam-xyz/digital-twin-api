@@ -5,12 +5,18 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "fastapi[standard]",
+    "numpy>=2.5.2",
     "torch>=2.13.0",
 ]
 
 [tool.fastapi]
 entrypoint = "app.main:app"
 
+[tool.uv.sources]
+torch = { index = "pytorch" }
+
 [[tool.uv.index]]
+name = "pytorch"
 url = "https://download.pytorch.org/whl/cpu"
-default = true
+explicit = true
