@@ -64,12 +64,10 @@ dates_raw = npz["dates"]  # chronological daily timestamps
 latitudes = npz["latitudes"]
 longitudes = npz["longitudes"]
 
-# Normalize dates to plain date objects for lookup, regardless of stored dtype
-dates = [
-    (d.astype("datetime64[D]").astype(datetime) if isinstance(d, np.datetime64) else d)
-    for d in dates_raw
-]
-dates = [d.date() if isinstance(d, datetime) else d for d in dates]
+# The .npz stores dates as plain "YYYY-MM-DD" strings (numpy.str_, dtype <U10).
+# Convert to real datetime.date objects for arithmetic (timedelta, comparisons),
+# but keep lookups keyed by date objects derived directly from those strings.
+dates = [datetime.strptime(str(d), "%Y-%m-%d").date() for d in dates_raw]
 date_to_index = {d: i for i, d in enumerate(dates)}
 
 print(f"Tensor loaded: {tensor.shape}, date range {dates[0]} to {dates[-1]}")
@@ -148,10 +146,12 @@ def predict(req: PredictRequest):
     ]
 
     # ── Split into per-channel grids for a friendlier response shape ─────────
-    forecast = {
-        name: y_phys[:, c].tolist()  # (FORECAST_LEN, 21, 13) as nested lists
-        for c, name in enumerate(CHANNEL_NAMES)
-    }
+    forecast = {}
+    for c, name in enumerate(CHANNEL_NAMES):
+        values = y_phys[:, c]
+        if name == "rainfall":
+            values = np.maximum(values, 0.0)  # rainfall can't be negative
+        forecast[name] = values.tolist()
 
     return PredictResponse(
         input_start_date=dates[start_idx].isoformat(),
