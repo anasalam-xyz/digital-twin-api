@@ -13,10 +13,6 @@ from typing import Dict, List, Optional
 import numpy as np
 import torch
 
-# On CPU-constrained hosting (e.g. free-tier Render), torch's default of
-# spawning one thread per detected core causes severe contention instead of
-# speedup, since the container often only gets a fraction of a real core.
-# Pinning to 1 thread avoids that and is typically faster in this scenario.
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -29,7 +25,6 @@ from app.model.normalization import (
 )
 
 torch.set_num_threads(1)
-# ─── Paths ──────────────────────────────────────────────────────────────────
 BASE_DIR = Path(__file__).parent
 MODEL_PATH = BASE_DIR / "model" / "weights" / "best_model.pt"
 DATA_DIR = BASE_DIR / "model" / "data"
@@ -38,17 +33,15 @@ VAL_PATH = DATA_DIR / "validation_tensor_kerala.npz"
 
 CHANNEL_NAMES = ["rainfall", "tmax", "tmin"]
 
-# ─── App setup ──────────────────────────────────────────────────────────────
 app = FastAPI(title="digital-twin-api")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # add your deployed frontend URL too
+    allow_origins=["http://localhost:3000", "https://digitaltwin-in.vercel.app/"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ─── Load everything ONCE at startup ────────────────────────────────────────
 print("Loading model...")
 model = ClimateDualNet(
     in_channels=N_CHANNELS,
@@ -85,7 +78,6 @@ date_to_index = {d: i for i, d in enumerate(dates)}
 print(f"Combined tensor: {tensor.shape}, date range {dates[0]} to {dates[-1]}")
 
 
-# ─── Request / response schemas ─────────────────────────────────────────────
 class ForecastRequest(BaseModel):
     date: str  # the single date the map should display, "YYYY-MM-DD"
     rainfall_delta: float = 0.0  # mm/day added to every input day's rainfall (what-if)
