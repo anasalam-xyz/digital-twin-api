@@ -12,6 +12,11 @@ from typing import Dict, List, Optional
 
 import numpy as np
 import torch
+
+# On CPU-constrained hosting (e.g. free-tier Render), torch's default of
+# spawning one thread per detected core causes severe contention instead of
+# speedup, since the container often only gets a fraction of a real core.
+# Pinning to 1 thread avoids that and is typically faster in this scenario.
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -23,6 +28,7 @@ from app.model.normalization import (
     denormalize_output,
 )
 
+torch.set_num_threads(1)
 # ─── Paths ──────────────────────────────────────────────────────────────────
 BASE_DIR = Path(__file__).parent
 MODEL_PATH = BASE_DIR / "model" / "weights" / "best_model.pt"
@@ -37,7 +43,7 @@ app = FastAPI(title="digital-twin-api")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "https://digitaltwin-in.vercel.app/"],
+    allow_origins=["http://localhost:3000"],  # add your deployed frontend URL too
     allow_methods=["*"],
     allow_headers=["*"],
 )
