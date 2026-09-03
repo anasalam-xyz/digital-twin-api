@@ -71,6 +71,7 @@ dates_raw = np.concatenate([train_npz["dates"], val_npz["dates"]], axis=0)
 latitudes = train_npz["latitudes"]
 longitudes = train_npz["longitudes"]
 
+
 train_npz.close()
 val_npz.close()
 del train_npz, val_npz
