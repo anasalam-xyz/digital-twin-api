@@ -71,6 +71,13 @@ dates_raw = np.concatenate([train_npz["dates"], val_npz["dates"]], axis=0)
 latitudes = train_npz["latitudes"]
 longitudes = train_npz["longitudes"]
 
+train_npz.close()
+val_npz.close()
+del train_npz, val_npz
+
+if tensor.dtype != np.float32:
+    tensor = tensor.astype(np.float32)
+
 # .npz stores dates as plain "YYYY-MM-DD" strings — parse directly, no datetime64 involved.
 dates = [datetime.strptime(str(d), "%Y-%m-%d").date() for d in dates_raw]
 date_to_index = {d: i for i, d in enumerate(dates)}
